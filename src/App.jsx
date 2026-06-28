@@ -1,122 +1,62 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Navbar from './components/layout/Navbar';
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
+import CitizenDashboard from './pages/citizen/CitizenDashboard';
+import LodgeHelpRequest from './pages/citizen/LodgeHelpRequest';
+import VolunteerDashboard from './pages/volunteer/VolunteerDashboard';
+import NgoDashboard from './pages/ngo/NgoDashboard';
+import AdminDashboard from './pages/admin/AdminDashboard';
 
-function App() {
-  const [count, setCount] = useState(0)
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+};
 
+const RoleRedirect = () => {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  switch (user.role) {
+    case 'ROLE_CITIZEN':
+      return <Navigate to="/citizen/dashboard" replace />;
+    case 'ROLE_VOLUNTEER':
+      return <Navigate to="/volunteer/dashboard" replace />;
+    case 'ROLE_NGO':
+      return <Navigate to="/ngo/dashboard" replace />;
+    case 'ROLE_ADMIN':
+      return <Navigate to="/admin/dashboard" replace />;
+    default:
+      return <Navigate to="/login" replace />;
+  }
+};
+
+export default function App() {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <AuthProvider>
+      <Router>
+        <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+          <Navbar />
+          <main className="flex-1">
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/" element={<RoleRedirect />} />
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+              <Route path="/citizen/dashboard" element={<ProtectedRoute allowedRoles={['ROLE_CITIZEN', 'ROLE_ADMIN']}><CitizenDashboard /></ProtectedRoute>} />
+              <Route path="/citizen/lodge-request" element={<ProtectedRoute allowedRoles={['ROLE_CITIZEN', 'ROLE_ADMIN']}><LodgeHelpRequest /></ProtectedRoute>} />
+              <Route path="/volunteer/dashboard" element={<ProtectedRoute allowedRoles={['ROLE_VOLUNTEER', 'ROLE_ADMIN']}><VolunteerDashboard /></ProtectedRoute>} />
+              <Route path="/ngo/dashboard" element={<ProtectedRoute allowedRoles={['ROLE_NGO', 'ROLE_ADMIN']}><NgoDashboard /></ProtectedRoute>} />
+              <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['ROLE_ADMIN']}><AdminDashboard /></ProtectedRoute>} />
+            </Routes>
+          </main>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      </Router>
+    </AuthProvider>
+  );
 }
-
-export default App
